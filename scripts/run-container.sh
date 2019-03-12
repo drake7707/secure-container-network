@@ -10,18 +10,18 @@ function parseArgs {
       SERVER=y
       shift
     ;;
-    
+
     --insecure)
       INSECURE=y
       shift
     ;;
-    
+
     --port)
       shift
       PORT=$1
       shift
     ;;
-    
+
     --subnet)
       shift
       SUBNET=$1
@@ -43,7 +43,7 @@ function parseArgs {
 
 function loadPeers {
   # add peers
-  if [[ ! -f /data/peers ]]; then
+  if [[ -f /data/peers ]]; then
     peers=$(cat /data/peers)
     IFS=$'\n' read -d '' -r -a lines <<< "${peers}" || true
     for line in "${lines[@]}"; do
@@ -65,7 +65,7 @@ function setupServer {
   fi
 
   # Configure tun device
-  /usr/local/bin/wireguard-go ${IFACE} -f &
+  /usr/local/bin/wireguard-go -f ${IFACE} &
   wg_pid=$!
 
   if [[ ! -d /data/pki ]]; then
@@ -78,7 +78,7 @@ function setupServer {
   fi
 
   echo "${SUBNET}" >> /data/subnet
- 
+
   wg set ${IFACE} listen-port ${PORT:-51820} private-key /data/pki/private.key
 
   IFS=$'/' read -d '' -r -a subnetparts <<< "${SUBNET}" || true
@@ -87,15 +87,23 @@ function setupServer {
 
   ip=$(helper::add_to_ip ${base_net} 1)
 
-  ip addr add dev ${IFACE} ${ip}
+  ip addr add dev ${IFACE} ${ip}/${net_prefix}
 
   loadPeers
 
   ip link set dev ${IFACE} up
 
   # run the endpoint
+  rest-endpoint --script "/scripts/rest-endpoint-handler.sh" &
+  rest_pid=$!
+
   while true; do
-    rest-endpoint --script "/scripts/rest-endpoint-handler.sh"
+
+    if ! ip a s ${IFACE} > /dev/null 2>&1; then
+      echo "Interface ${IFACE} doesn't exist anymore, exiting"
+      exit 1
+    fi
+
     sleep 1
   done
 }
@@ -108,7 +116,7 @@ function setupClient {
   fi
 
   # Configure tun device
-  /usr/local/bin/wireguard-go ${IFACE} -f &
+  /usr/local/bin/wireguard-go -f ${IFACE} &
   wg_pid=$!
 
   if [[ ! -d /data/pki ]]; then
@@ -139,12 +147,22 @@ function setupClient {
     base_net=${lines[2]}
     net_prefix=${lines[3]}
 
-
     wg set ${IFACE} private-key /data/pki/private.key peer ${endpointpubkey} allowed-ips ${base_net}/${net_prefix} endpoint ${ENDPOINT}
 
     ip addr add dev ${IFACE} ${clientip}/${net_prefix}
 
     ip link set dev ${IFACE} up
+
+    while true; do
+
+      if ! ip a s ${IFACE} > /dev/null 2>&1; then
+        echo "Interface ${IFACE} doesn't exist anymore, exiting"
+        exit 1
+      fi
+
+      sleep 1
+    done
+
   else
     echo "Unable to connect to remote endpoint" 1>&2
     exit 1

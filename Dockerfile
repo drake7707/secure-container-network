@@ -18,14 +18,18 @@ RUN wget https://git.zx2c4.com/WireGuard/snapshot/WireGuard-0.0.20181018.tar.xz 
     cp /go/Wireguard/src/tools/wg /usr/local/bin/wg && \
     cp /go/Wireguard/src/tools/wg-quick/linux.bash /usr/local/bin/wg-quick
 
+COPY ./rest-endpoint /rest-endpoint
+RUN cd /rest-endpoint && ./build.sh
+
 
 FROM alpine:edge
 RUN apk add --no-cache libmnl bash
 COPY --from=0 /usr/local/bin /usr/local/bin
+COPY --from=0 /rest-endpoint/output/rest-endpoint /usr/local/bin/rest-endpoint
+
 ENV WG_I_PREFER_BUGGY_USERSPACE_TO_POLISHED_KMOD=1
 
 COPY ./scripts /scripts
-COPY ./rest-endpoint/output/rest-endpoint /usr/local/bin/rest-endpoint
 
 VOLUME /data
 

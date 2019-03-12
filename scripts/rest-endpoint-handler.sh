@@ -1,6 +1,9 @@
 #!/bin/bash
+set -x
 
 source /scripts/helper.sh
+
+IFACE=wg0
 
 if [[ "${DEBUG:-}" == "y" ]]; then
   set -x
@@ -8,27 +11,31 @@ fi
 
 function worker_connect {
   local worker_pubkey=$(echo "$1" | base64 -d)
-  
-  
 
   subnet=$(cat /data/subnet)
   IFS=$'/' read -d '' -r -a subnetparts <<< "${subnet}" || true
   base_net=${subnetparts[0]}
   net_prefix=${subnetparts[1]}
 
-  line=$(grep -q "${worker_pubkey}" /data/peers)
+  if [[ ! -f /data/peers ]]; then
+    line=""
+  else
+    line=$(grep -q "${worker_pubkey}" /data/peers)
+  fi
 
   if [[ ! -z ${line} ]]; then
      IFS=";" read -ra line_parts <<< "${line}"
      pubkey=${line_parts[0]}
      ip=${line_parts[1]}
   else
-    nrPeers=$(wc -l /peers | cut -d ' ' -f 1)
+    nrPeers=$(wc -l /data/peers | cut -d ' ' -f 1)
     # 1 is server, 1 for new
     idx=${nrPeers}
     ((idx+=2))
     ip=$(helper::add_to_ip ${base_net} ${idx})
-    echo "${pubkey};${ip}" >> /data/peers
+    echo "${worker_pubkey};${ip}" >> /data/peers
+    # add peer to wireguard interface
+    wg set ${IFACE} peer ${worker_pubkey} allowed-ips ${ip}
   fi
 
   endpointpubkey=$(cat /data/pki/public.key)

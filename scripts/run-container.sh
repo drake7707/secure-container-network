@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
 
+source /scripts/helper.sh
 
 function parseArgs {
  for i in "$@"; do
@@ -9,21 +10,21 @@ function parseArgs {
       SERVER=y
       shift
     ;;
-
+    
     --insecure)
       INSECURE=y
       shift
     ;;
-
+    
     --port)
       shift
       PORT=$1
       shift
     ;;
-
-    --ip)
+    
+    --subnet)
       shift
-      IP=$1
+      SUBNET=$1
       shift
     ;;
 
@@ -31,6 +32,7 @@ function parseArgs {
       shift
       ENDPOINT=$1
       shift
+      ;;
     *)
     # unknown option
     ;;
@@ -57,8 +59,8 @@ function loadPeers {
 }
 
 function setupServer {
-  if [[ -z "${IP}" ]]; then
-    echo "No ip specified for the VPN server (missing --ip arg)" 1>&2
+  if [[ -z "${SUBNET}" ]]; then
+    echo "No subnet specified for the VPN server (missing --subnet arg)" 1>&2
     exit 1
   fi
 
@@ -75,13 +77,27 @@ function setupServer {
      wg pubkey < /data/pki/private.key > /data/pki/public.key
   fi
 
+  echo "${SUBNET}" >> /data/subnet
+ 
   wg set ${IFACE} listen-port ${PORT:-51820} private-key /data/pki/private.key
 
-  ip addr add dev ${IFACE} ${IP}
+  IFS=$'/' read -d '' -r -a subnetparts <<< "${SUBNET}" || true
+  base_net=${subnetparts[0]}
+  net_prefix=${subnetparts[1]}
+
+  ip=$(helper::add_to_ip ${base_net} 1)
+
+  ip addr add dev ${IFACE} ${ip}
 
   loadPeers
 
   ip link set dev ${IFACE} up
+
+  # run the endpoint
+  while true; do
+    rest-endpoint --script "/scripts/rest-endpoint-handler.sh"
+    sleep 1
+  done
 }
 
 
@@ -112,18 +128,21 @@ function setupClient {
      prefix="https://"
   fi
 
-  result=$(wget -O - -q "${prefix}${ENDPOINT}/associate-peer/${pubkey}")
+  base64pubkey=$(echo "${pubkey}" | base64)
+  result=$(wget -O - -q "${prefix}${ENDPOINT}/associate-peer/${base64pubkey}")
 
   if [[ $? == 0 && ! -z ${result} ]]; then
 
     IFS=$'\n' read -d '' -r -a lines <<< "${result}" || true
     endpointpubkey=${lines[0]}
     clientip=${lines[1]}
-    subnet=${lines[2]}
+    base_net=${lines[2]}
+    net_prefix=${lines[3]}
 
-    wg set ${IFACE} private-key /data/pki/private.key peer ${endpointpubkey} allowed-ips ${clientip} endpoint ${ENDPOINT}
 
-    ip addr add dev ${IFACE} ${clientip}
+    wg set ${IFACE} private-key /data/pki/private.key peer ${endpointpubkey} allowed-ips ${base_net}/${net_prefix} endpoint ${ENDPOINT}
+
+    ip addr add dev ${IFACE} ${clientip}/${net_prefix}
 
     ip link set dev ${IFACE} up
   else
@@ -133,7 +152,7 @@ function setupClient {
 }
 
 
-parseArgs
+parseArgs "$@"
 IFACE=wg0
 
 

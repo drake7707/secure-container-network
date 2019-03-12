@@ -24,9 +24,11 @@ RUN apk add --no-cache libmnl bash
 COPY --from=0 /usr/local/bin /usr/local/bin
 ENV WG_I_PREFER_BUGGY_USERSPACE_TO_POLISHED_KMOD=1
 
-COPY ./scripts/run-container.sh /usr/local/bin run-container
+COPY ./scripts /scripts
+COPY ./rest-endpoint/output/rest-endpoint /usr/local/bin/rest-endpoint
+
 VOLUME /data
 
-EXPOSE [ 51820, 51820/udp ]
+EXPOSE 51820 51820/udp
 
-ENTRYPOINT [ "run-container" ]
+ENTRYPOINT [ "/scripts/run-container.sh" ]

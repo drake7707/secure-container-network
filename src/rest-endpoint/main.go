@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+        "sync"
 )
 
 type handler struct {
@@ -13,12 +14,15 @@ type handler struct {
 
 var (
 	script *string
+        mutex *sync.Mutex
 )
 
 func main() {
 	script = flag.String("script", "", "The script to execute when a REST call has been received")
 	port := flag.String("port", "51820", "The port to listen on")
 	flag.Parse()
+
+        mutex = &sync.Mutex{}
 
 	fmt.Printf("Listening on http:" + *port)
 
@@ -28,7 +32,11 @@ func main() {
 }
 
 func (handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+        mutex.Lock()
+
 	runScript(r.Method, r.RequestURI, w)
+
+        mutex.Unlock()
 }
 
 func runScript(method string, path string, w http.ResponseWriter) {

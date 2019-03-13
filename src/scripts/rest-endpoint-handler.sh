@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 source /scripts/helper.sh
 
@@ -8,6 +7,31 @@ IFACE=wg0
 if [[ "${DEBUG:-}" == "y" ]]; then
   set -x
 fi
+
+function ensure_entry {
+    if [[ ! -f /data/peers ]]; then
+      line=""
+    else
+      line=$(grep "${worker_pubkey_base64}" /data/peers)
+    fi
+
+    if [[ ! -z ${line} ]]; then
+       IFS=";" read -ra line_parts <<< "${line}"
+       pubkey=${line_parts[0]}
+       ip=${line_parts[1]}
+    else
+      if [[ ! -f /data/peers ]]; then
+        nrPeers=0
+      else
+        nrPeers=$(wc -l /data/peers | cut -d ' ' -f 1)
+      fi
+      # 1 is server, 1 for new
+      idx=${nrPeers}
+      ((idx+=2))
+      ip=$(helper::add_to_ip ${base_net} ${idx})
+      echo "${worker_pubkey_base64};${ip}" >> /data/peers
+    fi
+}
 
 function worker_connect {
   local worker_pubkey_base64=$1
@@ -18,30 +42,17 @@ function worker_connect {
   base_net=${subnetparts[0]}
   net_prefix=${subnetparts[1]}
 
-  if [[ ! -f /data/peers ]]; then
-    line=""
-  else
-    line=$(grep "${worker_pubkey_base64}" /data/peers)
-  fi
+  ensure_entry
 
-  if [[ ! -z ${line} ]]; then
-     IFS=";" read -ra line_parts <<< "${line}"
-     pubkey=${line_parts[0]}
-     ip=${line_parts[1]}
-  else
-    if [[ ! -f /data/peers ]]; then
-      nrPeers=0
-    else
-      nrPeers=$(wc -l /data/peers | cut -d ' ' -f 1)
-    fi
-    # 1 is server, 1 for new
-    idx=${nrPeers}
-    ((idx+=2))
-    ip=$(helper::add_to_ip ${base_net} ${idx})
-    echo "${worker_pubkey_base64};${ip}" >> /data/peers
-    # add peer to wireguard interface
-    wg set ${IFACE} peer ${worker_pubkey} allowed-ips ${ip}
-  fi
+
+  line=$(grep "${worker_pubkey_base64}" /data/peers)
+
+  IFS=";" read -ra line_parts <<< "${line}"
+  pubkey=${line_parts[0]}
+  ip=${line_parts[1]}
+
+  # add peer to wireguard interface
+  wg set ${IFACE} peer ${worker_pubkey} allowed-ips ${ip} &
 
   endpointpubkey=$(cat /data/pki/public.key)
 
@@ -58,8 +69,10 @@ if echo ${path} | grep -qE '^/(associate-peer)'; then
   IFS='/' read -ra url_parts <<< "${path}"
   len=${#url_parts[@]}
   base64pubkey=${url_parts[len-1]}
-  
+
+
   result=$(worker_connect ${base64pubkey})
   printf "%s" "${result}"
+
 fi
 

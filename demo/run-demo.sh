@@ -1,43 +1,59 @@
 #!/bin/bash
 
+action=${1:-run}
+N=${2:-100}
+name=${3:-untitled}
 
-N=2
-
-docker rm -f wireguard-rest-server
-docker rm -f wireguard-server
-
-for ((i=0;i<N;i++)); do
-   docker rm -f wireguard-client-$i
-done
+if [[ ${action} == "run" || ${action} == "clean" ]]; then
 
 
-echo "Clean done, press any key to continue"
-read
+  pids=""
+  for ((i=0;i<N;i++)); do
+   docker rm -f wireguard-client-$i &
+   pids="$pids $!"
+  done
 
-mkdir -p $(pwd)/data/server
-mkdir -p $(pwd)/data/client
+  for pid in $pids; do
+    wait $pid
+  done
 
-# set up vpn server
-docker run \
--d --name wireguard-server \
--p 51820:51820/tcp -p 51820:51820/udp \
---cap-add=NET_ADMIN --device /dev/net/tun \
--v $(pwd)/data/server:/data \
-drake7707/wireguard-go --server --subnet 6.0.0.0/8 --foreground
+  docker rm -f wireguard-rest-server
+  docker rm -f wireguard-server
 
-# set up demo server
-docker run \
--d --name wireguard-rest-server \
---net=container:wireguard-server \
-drake7707/wireguard-server-test
+  #echo "Clean done, press any key to continue"
+  #read
 
+fi
 
+if [[ ${action} == "run" ]]; then
 
+  mkdir -p $(pwd)/data/run-${name}/server
+  mkdir -p $(pwd)/data/run-${name}/client
 
-for ((i=0;i<N;i++)); do
+  # set up vpn server
+  docker run \
+  -d --name wireguard-server \
+  -p 51820:51820/tcp -p 51820:51820/udp \
+  --cap-add=NET_ADMIN --device /dev/net/tun \
+  -v $(pwd)/data/run-${name}/server:/data \
+  drake7707/wireguard-go --server --subnet 6.0.0.0/8 --foreground
+
+  # set up demo server
+  docker run \
+  -d --name wireguard-rest-server \
+  --net=container:wireguard-server \
+  drake7707/wireguard-server-test
+
+  pids=""
+  for ((i=0;i<N;i++)); do
    docker run -d --name wireguard-client-$i --hostname wireguard-client-$i \
-              -v $(pwd)/data/client:/results \
+              -v $(pwd)/data/run-${name}/client:/results \
               --cap-add=NET_ADMIN --device /dev/net/tun \
               drake7707/wireguard-client-test &
-done
+   pids="$pids $!"
+  done
 
+  for pid in $pids; do
+    wait $pid
+  done
+fi

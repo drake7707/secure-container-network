@@ -75,7 +75,7 @@ function setupServer {
   wg_pid=$!
 
   errcount=0
-  while ! ip a s ${IFACE} > /dev/null 2>&1; do
+  while ! wg show ${IFACE} > /dev/null 2>&1; do
     sleep 1
     ((errcount++))
     if [[ ${errcount} > 5 ]]; then
@@ -135,6 +135,16 @@ function setupClient {
   # Configure tun device
   /usr/local/bin/wireguard-go -f ${IFACE} &
   wg_pid=$!
+
+  errcount=0
+  while ! wg show ${IFACE} > /dev/null 2>&1; do
+    sleep 1
+    ((errcount++))
+    if [[ ${errcount} > 5 ]]; then
+      echo "Wireguard interface did not came up in time" 1>&2
+      exit 1
+    fi
+  done
 
   if [[ ! -d /data/pki ]]; then
     mkdir -p /data/pki

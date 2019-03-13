@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-RUN apk update && apk add --no-cache libc6-compat git make gcc musl-dev libmnl-dev bash
+RUN apk update && apk add --no-cache libc6-compat git make gcc musl-dev libmnl-dev bash util-linux
 
 RUN wget https://git.zx2c4.com/wireguard-go/snapshot/wireguard-go-0.0.20180613.tar.xz && \
     tar -xvf wireguard-go-0.0.20180613.tar.xz && \

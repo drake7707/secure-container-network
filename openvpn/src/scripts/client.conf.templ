@@ -1,0 +1,28 @@
+float
+tls-client
+nobind
+dev tun
+remote-cert-tls server
+topology subnet
+pull
+
+
+remote {{openvpn_server}} {{openvpn_server_port}}
+
+{{additional_routes}}
+
+<key>
+{{private_key}}
+</key>
+<cert>
+{{cert}}
+</cert>
+<ca>
+{{ca}}
+</ca>
+<tls-auth>
+{{tlsauth}}
+</tls-auth>
+
+key-direction 1
+

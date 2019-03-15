@@ -47,6 +47,7 @@ if [[ ${action} == "run" ]]; then
   pids=""
   for ((i=0;i<N;i++)); do
    docker run -d --name wireguard-client-$i --hostname wireguard-client-$i \
+ 	      --ulimit nofile=98304:98304 \
               -v $(pwd)/data/run-${name}/client:/results \
               --cap-add=NET_ADMIN --device /dev/net/tun \
               drake7707/wireguard-client-test &

@@ -2,13 +2,14 @@
 #set -x
 
 /scripts/run-container.sh --endpoint 10.2.0.78:51820
+
 if [[ $? != 0 ]]; then
   echo "Connection to VPN server was not set up correctly" 1>&2
   exit 1
 fi
 
 function curl_time {
-   local timestamp=$(echo $(($(date +'%s * 1000 + %-N / 1000000'))))
+   local timestamp=$(date +%s%N)
 
    curl -f -s -o /dev/null -w "\
    namelookup:  %{time_namelookup};\

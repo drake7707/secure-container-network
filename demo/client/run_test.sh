@@ -1,7 +1,7 @@
 #!/bin/bash
-#set -x
+set -x
 
-/scripts/run-container.sh --endpoint 10.2.0.78:51820
+/scripts/run-container.sh --endpoint $1
 
 if [[ $? != 0 ]]; then
   echo "Connection to VPN server was not set up correctly" 1>&2

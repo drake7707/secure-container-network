@@ -1,12 +1,14 @@
-#!/bin/sh
+#!/bin/bash
+
+set -x
 
 action=${1:-run}
 N=${2:-5}
 runname=${3:-untitled}
 
-clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/data/${runname}/client"
+clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/demo/data/${runname}/client"
 image="drake7707/wireguard-client-test"
-endpoint="10.2.0.144:51820"
+endpoint="10.2.0.23:51820"
 replicas=${N}
 
 
@@ -26,7 +28,7 @@ fi
 
 if [[ ${action} == "run" ]]; then
 
-  mkdir -p $(pwd)/data/run-${name}/server
+  mkdir -p $(pwd)/data/${runname}/server
   mkdir -p ${clientpath}
 
   # set up vpn server
@@ -46,9 +48,10 @@ if [[ ${action} == "run" ]]; then
   tmpfile=$(mktemp /tmp/kube-deployment.XXXXXX)
   cat "./deployment.yaml.templ" > ${tmpfile}
   sed -i "s/{{replicas}}/${replicas}/" "${tmpfile}"
-  sed -i "s/{{image}}/${image}/" "${tmpfile}"
+  sed -i "s#{{image}}#${image}#" "${tmpfile}"
+  sed -i "s#{{clientpath}}#${clientpath}#" "${tmpfile}"
   sed -i "s/{{endpoint}}/${endpoint}/" "${tmpfile}"
   sed -i "s/{{runname}}/${runname}/" "${tmpfile}"
 
-  kubectl apply -f $(tmpfile)
+  kubectl apply -f ${tmpfile}
 fi

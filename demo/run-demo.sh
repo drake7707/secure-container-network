@@ -50,7 +50,8 @@ if [[ ${action} == "run" ]]; then
  	      --ulimit nofile=98304:98304 \
               -v $(pwd)/data/run-${name}/client:/results \
               --cap-add=NET_ADMIN --device /dev/net/tun \
-              drake7707/wireguard-client-test &
+              drake7707/wireguard-client-test 10.2.0.23:51820 &
+
    pids="$pids $!"
   done
 

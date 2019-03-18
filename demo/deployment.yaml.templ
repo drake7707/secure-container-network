@@ -15,13 +15,23 @@ spec:
       containers:
       - name: loadtestclient
         image: "{{image}}"
-        args: [ "--endpoint", "{{endpoint}}", "--foreground" ]
+        imagePullPolicy: Always
+        args: [ "{{endpoint}}" ]
+        securityContext:
+          capabilities:
+            add:
+             - NET_ADMIN
+
         volumeMounts:
           - mountPath: "/results"
             name: results
+          - mountPath: /dev/net/tun
+            name: dev-net-tun
       volumes:
         - name: "results"
           hostPath:
             path: "{{clientpath}}"
-
+        - name: "dev-net-tun"
+          hostPath:
+            path: "/dev/net/tun"
 

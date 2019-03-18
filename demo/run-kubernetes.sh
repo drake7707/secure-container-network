@@ -36,7 +36,7 @@ if [[ ${action} == "run" ]]; then
   -d --name wireguard-server \
   -p 51820:51820/tcp -p 51820:51820/udp \
   --cap-add=NET_ADMIN --device /dev/net/tun \
-  -v $(pwd)/data/run-${name}/server:/data \
+  -v $(pwd)/data/${runname}/server:/data \
   drake7707/wireguard-go --server --subnet 6.0.0.0/8 --foreground
 
   # set up demo server

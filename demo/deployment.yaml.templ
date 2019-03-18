@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadtestclient
+spec:
+  selector:
+    matchLabels:
+      app: loadtestclient
+  replicas: {{replicas}}
+  template:
+    metadata:
+      labels:
+        app: loadtestclient
+    spec:
+      containers:
+      - name: loadtestclient
+        image: "{{image}}"
+        args: [ "--endpoint", "{{endpoint}}", "--foreground" ]
+        volumeMounts:
+          - mountPath: "/results"
+            name: results
+      volumes:
+        - name: "results"
+          hostPath:
+            path: "{{clientpath}}"
+
+

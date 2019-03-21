@@ -28,6 +28,6 @@ starttransfer:  %{time_starttransfer};\
 }
 
 while true; do
-   curl_time "http://6.0.0.1:1500/test" >> /results/$(hostname).csv
+   curl_time --connect-timeout 10 --max-time 10 "http://6.0.0.1:1500/test" >> /results/$(hostname).csv
    sleep 0.25
 done

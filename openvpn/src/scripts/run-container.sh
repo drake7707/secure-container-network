@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 source /scripts/helper.sh
 
@@ -123,10 +123,10 @@ function setupClient {
     fi
 
     openvpn --config "/data/client.conf" ${extraArgs}
+    openvpnpid=$!
 
     if [[ "${FOREGROUND:-n}" == "y" ]]; then
       while true; do
-
         sleep 1
       done
     fi

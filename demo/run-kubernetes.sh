@@ -5,21 +5,40 @@ set -x
 action=${1:-run}
 N=${2:-5}
 runname=${3:-untitled}
+vpn=${4:-wireguard}
+lossperc=${5:-0}
 
 clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/demo/data/${runname}/client"
-image="drake7707/wireguard-client-test"
-endpoint="10.2.0.23:51820"
+
+
+modprobe sch_netem
+
+
+if [[ ${vpn} == "wireguard" ]]; then
+  vpn_image="drake7707/wireguard-go"
+  port="51820"
+  image="drake7707/wireguard-client-test"
+elif [[ ${vpn} == "openvpn" ]]; then
+  vpn_image="drake7707/openvpn"
+  port="1194"
+  image="drake7707/openvpn-client-test"
+elif [[ ${vpn} == "zerotier" ]]; then
+  vpn_image="drake7707/zerotier"
+  port="9993"
+  image="drake7707/zerotier-client-test"
+fi
+
+
+
 replicas=${N}
 
 
 if [[ ${action} == "run" || ${action} == "clean" ]]; then
 
-
   kubectl delete deployment loadtestclient
 
-
-  docker rm -f wireguard-rest-server
-  docker rm -f wireguard-server
+  docker rm -f ${vpn}-rest-server
+  docker rm -f ${vpn}-server
 
   #echo "Clean done, press any key to continue"
   #read
@@ -33,17 +52,31 @@ if [[ ${action} == "run" ]]; then
 
   # set up vpn server
   docker run \
-  -d --name wireguard-server \
-  -p 51820:51820/tcp -p 51820:51820/udp \
+  -d --name ${vpn}-server \
+  -p ${port}:${port}/tcp -p ${port}:${port}/udp \
   --cap-add=NET_ADMIN --device /dev/net/tun \
   -v $(pwd)/data/${runname}/server:/data \
-  drake7707/wireguard-go --server --subnet 6.0.0.0/8 --foreground
+  ${vpn_image} --server --subnet 6.0.0.0/16 --foreground
 
   # set up demo server
   docker run \
-  -d --name wireguard-rest-server \
-  --net=container:wireguard-server \
-  drake7707/wireguard-server-test
+  -d --name ${vpn}-rest-server \
+  --cap-add=NET_ADMIN \
+  --net=container:${vpn}-server \
+  drake7707/rest-server-test
+
+  # if zerotier overwrite the endpoint with the network id
+  if [[ ${vpn} == "zerotier" ]]; then
+    endpoint=$(docker exec ${vpn}-server /scripts/get-network-id.sh)
+    while [[ -z ${endpoint} || ${endpoint} == "null" ]]; do
+      endpoint=$(docker exec ${vpn}-server /scripts/get-network-id.sh)
+    done
+  fi
+
+  # add loss percentage to eth0 of the container
+  if [[ ${lossperc} > 0 ]]; then
+    docker exec ${vpn}-rest-server tc qdisc add dev eth0 root netem loss ${lossperc}%
+  fi
 
   tmpfile=$(mktemp /tmp/kube-deployment.XXXXXX)
   cat "./deployment.yaml.templ" > ${tmpfile}

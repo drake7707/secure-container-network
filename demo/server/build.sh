@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker build -t drake7707/wireguard-server-test .
+docker build -t drake7707/rest-server-test .

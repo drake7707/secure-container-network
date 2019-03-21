@@ -1,4 +1,6 @@
-FROM drake7707/wireguard-go
+ARG IMAGE
+
+FROM $IMAGE
 
 RUN apk --no-cache add curl
 

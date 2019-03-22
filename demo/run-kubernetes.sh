@@ -5,7 +5,7 @@ set -x
 action=${1:-run}
 N=${2:-5}
 runname=${3:-untitled}
-vpn=${4:-wireguard}
+vpn=${4:-}
 lossperc=${5:-0}
 
 clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/demo/data/${runname}/client"
@@ -18,14 +18,25 @@ if [[ ${vpn} == "wireguard" ]]; then
   vpn_image="drake7707/wireguard-go"
   port="51820"
   image="drake7707/wireguard-client-test"
+  endpoint=10.2.0.23:${port}
 elif [[ ${vpn} == "openvpn" ]]; then
   vpn_image="drake7707/openvpn"
   port="1194"
   image="drake7707/openvpn-client-test"
+  endpoint=10.2.0.23:${port}
 elif [[ ${vpn} == "zerotier" ]]; then
   vpn_image="drake7707/zerotier"
   port="9993"
   image="drake7707/zerotier-client-test"
+  endpoint=10.2.0.23:${port}
+elif [[ ${vpn} == "tinc" ]]; then
+  vpn_image="drake7707/tinc"
+  port="655"
+  image="drake7707/tinc-client-test"
+  endpoint=10.2.0.23:6555
+else
+  echo "Invalid VPN specified" 1>&2
+  exit 1
 fi
 
 
@@ -50,10 +61,15 @@ if [[ ${action} == "run" ]]; then
   mkdir -p $(pwd)/data/${runname}/server
   mkdir -p ${clientpath}
 
+  additionalPorts=""
+  if [[ ${vpn} == "tinc" ]]; then
+    additionalPorts="-p 6555:6555"
+  fi
+
   # set up vpn server
   docker run \
   -d --name ${vpn}-server \
-  -p ${port}:${port}/tcp -p ${port}:${port}/udp \
+  -p ${port}:${port}/tcp -p ${port}:${port}/udp ${additionalPorts} \
   --cap-add=NET_ADMIN --device /dev/net/tun \
   -v $(pwd)/data/${runname}/server:/data \
   ${vpn_image} --server --subnet 6.0.0.0/16 --foreground

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-vpn=${1:-wireguard}
+vpn=${1}
 n=100
 
 for ((i=0;i<=100;i+=5)); do

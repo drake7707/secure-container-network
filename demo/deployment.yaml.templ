@@ -15,7 +15,7 @@ spec:
       containers:
       - name: loadtestclient
         image: "{{image}}"
-#        imagePullPolicy: Always
+        imagePullPolicy: Always
         args: [ "{{endpoint}}" ]
         securityContext:
           capabilities:

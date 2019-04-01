@@ -20,10 +20,11 @@ function curl_time {
 starttransfer:  %{time_starttransfer};\
         total:  %{time_total};" "$@"
 
-    if [[ $? != 0 ]]; then
-      echo "failed;${timestamp}"
+    exitcode=$?
+    if [[ ${exitcode} != 0 ]]; then
+      echo "failed;${timestamp};${exitcode}"
     else
-      echo "ok;${timestamp}"
+      echo "ok;${timestamp};${exitcode}"
     fi
 }
 

@@ -46,7 +46,7 @@ namespace Analyzer
             List<IEnumerator<Entry>> allEntries = new List<IEnumerator<Entry>>();
 
 
-            Console.WriteLine("name;n;ok;earliestTS;TSwhenAllPodsAreRunning;min;max;q1;median;q3;dataFrom");
+            Console.WriteLine("name;n;ok;earliestTS;TSwhenAllPodsAreRunning;min;max;q1;median;q3;dataFrom;fail2;fail3;fail4;fail5;fail6");
 
             foreach (var dir in System.IO.Directory.GetDirectories(args[0]).OrderBy(path => {
                 int val;
@@ -102,6 +102,28 @@ namespace Analyzer
                 long okCount = entries.Where(e => e.IsOK).Count();
 
 
+                int[] consecutivefailures = new int[entries.Length+1];
+                long sustainedFailureCount = 0;
+                for (int i = 0; i < entries.Length; i++)
+                {
+                  //  if (!entries[i - 1].IsOK && entries[i].IsOK)
+                    if (entries[i].IsOK)
+                        sustainedFailureCount = 0;
+                    else 
+                        sustainedFailureCount++;
+
+                    consecutivefailures[sustainedFailureCount]++;
+                }
+                if (sustainedFailureCount > 0)
+                    consecutivefailures[sustainedFailureCount]++;
+
+
+                long failedAtLeast2Times = consecutivefailures.Skip(2).Sum();
+                long failedAtLeast3Times = consecutivefailures.Skip(3).Sum();
+                long failedAtLeast4Times = consecutivefailures.Skip(4).Sum();
+                long failedAtLeast5Times = consecutivefailures.Skip(5).Sum();
+                long failedAtLeast6Times = consecutivefailures.Skip(6).Sum();
+
                 var values = entries.Where(e => e.IsOK).Select(e => e.TotalTime).ToArray();
 
                 string name = System.IO.Path.GetFileName(dir);
@@ -112,7 +134,7 @@ namespace Analyzer
                 double median = values.Length == 0 ? 0 : Percentile(values, 0.5);
                 double q3 = values.Length == 0 ? 0 : Percentile(values, 0.75);
 
-                Console.WriteLine($"{name};{count};{okCount};{earliestWorkingTimestamp};{earliestWorkingTimestampForAllPods};{min.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{max.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q1.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{median.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q3.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{dataFrom}");
+                Console.WriteLine($"{name};{count};{okCount};{earliestWorkingTimestamp};{earliestWorkingTimestampForAllPods};{min.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{max.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q1.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{median.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q3.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{dataFrom};{failedAtLeast2Times};{failedAtLeast3Times};{failedAtLeast4Times};{failedAtLeast5Times};{failedAtLeast6Times}");
                 //'   namelookup:  0.000032;
                 //connect:  0.000996;
                 //appconnect:  0.000000;

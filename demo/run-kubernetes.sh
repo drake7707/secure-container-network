@@ -7,6 +7,7 @@ N=${2:-5}
 runname=${3:-untitled}
 vpn=${4:-}
 lossperc=${5:-0}
+latency=${6:-0}
 
 clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/demo/data/${runname}/client"
 
@@ -92,6 +93,9 @@ if [[ ${action} == "run" ]]; then
   # add loss percentage to eth0 of the container
   if [[ ${lossperc} > 0 ]]; then
     docker exec ${vpn}-rest-server tc qdisc add dev eth0 root netem loss ${lossperc}%
+  fi
+  if [[ ${latency} > 0 ]]; then
+    docker exec ${vpn}-rest-server tc qdisc add dev eth0 root netem delay ${latency}ms
   fi
 
   tmpfile=$(mktemp /tmp/kube-deployment.XXXXXX)

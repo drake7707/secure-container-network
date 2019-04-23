@@ -46,7 +46,7 @@ namespace Analyzer
             List<IEnumerator<Entry>> allEntries = new List<IEnumerator<Entry>>();
 
 
-            Console.WriteLine("name;n;ok;earliestTS;TSwhenAllPodsAreRunning;min;max;q1;median;q3;dataFrom;fail2;fail3;fail4;fail5;fail6");
+            Console.WriteLine("name;n;ok;earliestTS;TSwhenAllPodsAreRunning;min;max;q1;median;q3;avg;stddev;dataFrom;fail2;fail3;fail4;fail5;fail6");
 
             foreach (var dir in System.IO.Directory.GetDirectories(args[0]).OrderBy(path => {
                 int val;
@@ -133,8 +133,10 @@ namespace Analyzer
                 double q1 = values.Length == 0 ? 0 : Percentile(values, 0.25);
                 double median = values.Length == 0 ? 0 : Percentile(values, 0.5);
                 double q3 = values.Length == 0 ? 0 : Percentile(values, 0.75);
+                double avg = values.Length == 0 ? 0 : values.Average();
+                double stddev = values.Length == 0 ? 0 : StdDev(values, false);
 
-                Console.WriteLine($"{name};{count};{okCount};{earliestWorkingTimestamp};{earliestWorkingTimestampForAllPods};{min.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{max.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q1.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{median.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q3.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{dataFrom};{failedAtLeast2Times};{failedAtLeast3Times};{failedAtLeast4Times};{failedAtLeast5Times};{failedAtLeast6Times}");
+                Console.WriteLine($"{name};{count};{okCount};{earliestWorkingTimestamp};{earliestWorkingTimestampForAllPods};{min.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{max.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q1.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{median.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{q3.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{avg.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{stddev.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)};{dataFrom};{failedAtLeast2Times};{failedAtLeast3Times};{failedAtLeast4Times};{failedAtLeast5Times};{failedAtLeast6Times}");
                 //'   namelookup:  0.000032;
                 //connect:  0.000996;
                 //appconnect:  0.000000;
@@ -172,6 +174,33 @@ namespace Analyzer
                         Console.Error.WriteLine("! Omitting line " + line + " from file " + file + " because it was unparsable");
                     }
                 }
+            }
+        }
+
+        // Return the standard deviation of an array of Doubles.
+        //
+        // If the second argument is True, evaluate as a sample.
+        // If the second argument is False, evaluate as a population.
+        public static double StdDev(IEnumerable<double> values,
+            bool as_sample)
+        {
+            // Get the mean.
+            double mean = values.Sum() / values.Count();
+
+            // Get the sum of the squares of the differences
+            // between the values and the mean.
+            var squares_query =
+                from double value in values
+                select (value - mean) * (value - mean);
+            double sum_of_squares = squares_query.Sum();
+
+            if (as_sample)
+            {
+                return Math.Sqrt(sum_of_squares / (values.Count() - 1));
+            }
+            else
+            {
+                return Math.Sqrt(sum_of_squares / values.Count());
             }
         }
     }

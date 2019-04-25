@@ -35,6 +35,11 @@ elif [[ ${vpn} == "tinc" ]]; then
   port="655"
   image="drake7707/tinc-client-test"
   endpoint=10.2.0.23:6555
+elif [[ ${vpn} == "softether" ]]; then
+  vpn_image="drake7707/softether"
+  port="443"
+  image="drake7707/softether-client-test"
+  endpoint=10.2.0.23:4443
 else
   echo "Invalid VPN specified" 1>&2
   exit 1
@@ -65,6 +70,8 @@ if [[ ${action} == "run" ]]; then
   additionalPorts=""
   if [[ ${vpn} == "tinc" ]]; then
     additionalPorts="-p 6555:6555"
+  elif [[ ${vpn} == "softether" ]]; then
+    additionalPorts="-p 4443:4443"
   fi
 
   # set up vpn server

@@ -5,6 +5,8 @@ set -x
 
 PORT=${2}
 
+export LOAD_SLEEP=${3:-36000}
+
 if [[ $? != 0 ]]; then
   echo "Connection to VPN server was not set up correctly" 1>&2
   exit 1
@@ -13,6 +15,19 @@ fi
 
 # find the vpn interface, in the container there are only 3, lo , eth0 and the vpn iface
 vpn_iface=$(ls -1 /sys/class/net/ | grep -e "[^lo|eth0]")
+
+errcount=0
+while [[ -z ${vpn_iface} ]]; do
+  sleep 1
+  ((errcount++))
+  if [[ ${errcount} > 5 ]]; then
+    echo "Interface did not came up in time" 1>&2
+    exit 1
+  fi
+  vpn_iface=$(ls -1 /sys/class/net/ | grep -e "[^lo|eth0]")
+done
+
+
 eth_iface=eth0
 
 # monitor the tcp/udp on the port used by the vpn to filter out all other traffic
@@ -33,6 +48,9 @@ function checkBytes {
 
   vpn_rx="$(cat /sys/class/net/${vpn_iface}/statistics/rx_bytes)"
   vpn_tx="$(cat /sys/class/net/${vpn_iface}/statistics/tx_bytes)"
+
+  vpn_rx_packets="$(cat /sys/class/net/${vpn_iface}/statistics/rx_packets)"
+  vpn_tx_packets="$(cat /sys/class/net/${vpn_iface}/statistics/tx_packets)"
 
   lines=$(iptables -x -L -v | grep -E "Chain INPUT|OUTPUT" | cut -d ' ' -f 2,5,7)
   IFS=$'\n' read -d '' -ra line_arr <<< "${lines}"
@@ -55,7 +73,7 @@ function checkBytes {
 
   if [[ ${eth_rx} != ${old_eth_rx} || ${vpn_rx} != ${old_vpn_rx} || ${eth_tx} != ${old_eth_tx} || ${vpn_tx} != ${old_vpn_tx} ]]; then
      local timestamp=$(date +%s%N)
-     echo "${timestamp};${eth_rx};${eth_tx};${eth_rx_packets};${eth_tx_packets};${vpn_rx};${vpn_tx}"
+     echo "${timestamp};${eth_rx};${eth_tx};${eth_rx_packets};${eth_tx_packets};${vpn_rx};${vpn_tx};${vpn_rx_packets};${vpn_tx_packets}"
   fi
 
   old_eth_rx=${eth_rx}
@@ -66,6 +84,9 @@ function checkBytes {
 
 }
 
+
+# generate some requests
+(while true; do sleep ${LOAD_SLEEP}; curl -s http://6.0.0.1:1500/test > /dev/null; done) &
 
 while true; do
   checkBytes >> /results/$(hostname).csv

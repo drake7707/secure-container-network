@@ -2,7 +2,7 @@ ARG IMAGE
 
 FROM $IMAGE
 
-RUN apk --no-cache add curl
+RUN apk --no-cache add curl iptables
 
 COPY ./run_test.sh /usr/local/bin/run_test
 

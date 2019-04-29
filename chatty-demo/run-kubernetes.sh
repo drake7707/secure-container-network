@@ -8,6 +8,8 @@ runname=${3:-untitled}
 
 vpn=${4:-}
 
+loadsleep=${5:-36000}
+
 clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/chatty-demo/data/${runname}/client"
 
 modprobe sch_netem
@@ -98,6 +100,7 @@ if [[ ${action} == "run" ]]; then
   sed -i "s#{{clientpath}}#${clientpath}#" "${tmpfile}"
   sed -i "s/{{endpoint}}/${endpoint}/" "${tmpfile}"
   sed -i "s/{{port}}/${port}/" "${tmpfile}"
+  sed -i "s/{{loadsleep}}/${loadsleep}/" "${tmpfile}"
   sed -i "s/{{runname}}/${runname}/" "${tmpfile}"
 
   kubectl apply -f ${tmpfile}

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chattytestclient
+spec:
+  selector:
+    matchLabels:
+      app: chattytestclient
+  replicas: {{replicas}}
+  template:
+    metadata:
+      labels:
+        app: chattytestclient
+    spec:
+      containers:
+      - name: chattytestclient
+        image: "{{image}}"
+        imagePullPolicy: Always
+        args: [ "{{endpoint}}", "{{port}}" ]
+        securityContext:
+          capabilities:
+            add:
+             - NET_ADMIN
+
+        volumeMounts:
+          - mountPath: "/results"
+            name: results
+          - mountPath: /dev/net/tun
+            name: dev-net-tun
+      volumes:
+        - name: "results"
+          hostPath:
+            path: "{{clientpath}}"
+        - name: "dev-net-tun"
+          hostPath:
+            path: "/dev/net/tun"
+

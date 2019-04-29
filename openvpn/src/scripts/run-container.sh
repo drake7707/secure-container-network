@@ -125,6 +125,16 @@ function setupClient {
     openvpn --config "/data/client.conf" ${extraArgs}
     openvpnpid=$!
 
+    errcount=0
+    while ! ip a show dev tun0 > /dev/null 2>&1; do
+      sleep 1
+      ((errcount++))
+      if [[ ${errcount} > 5 ]]; then
+        echo "Interface did not came up in time" 1>&2
+        exit 1
+      fi
+    done
+
     if [[ "${FOREGROUND:-n}" == "y" ]]; then
       while true; do
         sleep 1

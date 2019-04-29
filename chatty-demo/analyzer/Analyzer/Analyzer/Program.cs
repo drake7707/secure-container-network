@@ -50,7 +50,7 @@ namespace Analyzer
             List<IEnumerator<Entry>> allEntries = new List<IEnumerator<Entry>>();
 
 
-            Console.WriteLine("name;eth_bytes_sent_rate;eth_bytes_received_rate;eth_max_bytes_sent;eth_max_bytes_received;eth_packets_sent_rate;eth_packets_received_rate;avg_time_between_packets;avg_packet_size_sent;avg_packet_size_received;control_bytes_sent_rate;control_bytes_received_rate;control_max_bytes_sent;control_max_bytes_received;control_packets_sent_rate;control_packets_received_rate;avg_packet_size_sent;avg_packet_size_received");
+            Console.WriteLine("name;eth_bytes_sent_rate;eth_bytes_received_rate;eth_max_bytes_sent;eth_max_bytes_received;eth_packets_sent_rate;eth_packets_received_rate;avg_time_between_packets;avg_eth_packet_size_sent;avg_eth_packet_size_received;control_bytes_sent_rate;control_bytes_received_rate;control_max_bytes_sent;control_max_bytes_received;control_packets_sent_rate;control_packets_received_rate;avg_control_packet_size_sent;avg_control_packet_size_received;vpn_bytes_sent_rate;vpn_bytes_received_rate;vpn_max_bytes_sent;vpn_max_bytes_received;vpn_packets_sent_rate;vpn_packets_received_rate;avg_vpn_packet_size_sent;avg_vpn_packet_size_received");
 
             foreach (var dir in System.IO.Directory.GetDirectories(args[0]))
             {
@@ -81,6 +81,17 @@ namespace Analyzer
                 List<double> control_packet_sizes_sent = new List<double>();
                 List<double> control_packet_sizes_received = new List<double>();
 
+
+                List<double> vpn_sent_rates = new List<double>();
+                List<double> vpn_received_rates = new List<double>();
+                List<double> vpn_max_bytes_received = new List<double>();
+                List<double> vpn_max_bytes_sent = new List<double>();
+                List<double> vpn_sent_packet_rates = new List<double>();
+                List<double> vpn_received_packet_rates = new List<double>();
+
+                List<double> vpn_packet_sizes_sent = new List<double>();
+                List<double> vpn_packet_sizes_received = new List<double>();
+
                 foreach (var pair in entriesPerFile)
                 {
                     var entries = pair.Value;
@@ -95,6 +106,11 @@ namespace Analyzer
 
                         var controlRX = entries[0].Eth0RX - entries[0].VpnRX;
                         var controlTX = entries[0].Eth0TX - entries[0].VpnTX;
+
+                        var vpnRX = entries[0].VpnRX;
+                        var vpnTX = entries[0].VpnTX;
+                        var vpnRXPackets = entries[0].VpnRXPackets;
+                        var vpnTXPackets = entries[0].VpnTXPackets;
 
                         for (int i = 1; i < entries.Length; i++)
                         {
@@ -118,6 +134,18 @@ namespace Analyzer
                                 ethTXTimestamp = entries[i].Timestamp;
                                 ethTX = entries[i].Eth0TX;
                                 controlTX = entries[i].Eth0TX - entries[i].VpnTX;
+                            }
+
+                            if (entries[i].VpnRXPackets > vpnRXPackets)
+                            {
+                                vpn_packet_sizes_received.Add((entries[i].VpnRX - vpnRX) / (double)(entries[i].VpnRXPackets - vpnRXPackets));
+                                vpnRX = entries[i].VpnRX;
+                            }
+
+                            if (entries[i].VpnTXPackets > vpnTXPackets)
+                            {
+                                vpn_packet_sizes_sent.Add((entries[i].VpnTX - vpnTX) / (double)(entries[i].VpnTXPackets - vpnTXPackets));
+                                vpnTX = entries[i].VpnTX;
                             }
 
                         }
@@ -144,8 +172,6 @@ namespace Analyzer
                         eth_sent_packet_rates.Add(eth_packet_sent_rate);
                         eth_received_packet_rates.Add(eth_packet_received_rate);
 
-                   
-
                         var control_total_bytes_sent = entries.Last().Eth0TX - entries.Last().VpnTX;
                         var control_total_bytes_received = entries.Last().Eth0RX - entries.Last().VpnRX;
 
@@ -164,6 +190,24 @@ namespace Analyzer
 
                         control_sent_packet_rates.Add(control_packet_sent_rate);
                         control_received_packet_rates.Add(control_packet_received_rate);
+
+                        var vpn_total_bytes_sent = entries.Last().VpnTX;
+                        var vpn_total_bytes_received = entries.Last().VpnRX;
+
+                        var vpn_total_packet_sent = entries.Last().VpnTXPackets;
+                        var vpn_total_packet_received = entries.Last().VpnRXPackets;
+
+                        var vpn_bytes_sent_rate = (double)vpn_total_bytes_sent / period;
+                        var vpn_bytes_received_rate = (double)vpn_total_bytes_received / period;
+
+                        var vpn_packet_sent_rate = (double)vpn_total_packet_sent / period;
+                        var vpn_packet_received_rate = (double)vpn_total_packet_received / period;
+
+                        vpn_sent_rates.Add(vpn_bytes_sent_rate);
+                        vpn_received_rates.Add(vpn_bytes_received_rate);
+
+                        vpn_sent_packet_rates.Add(vpn_packet_sent_rate);
+                        vpn_received_packet_rates.Add(vpn_packet_received_rate);
                     }
                     else
                     {
@@ -181,6 +225,15 @@ namespace Analyzer
 
                         control_sent_packet_rates.Add(0);
                         control_received_packet_rates.Add(0);
+
+                        vpn_sent_rates.Add(0);
+                        vpn_received_rates.Add(0);
+
+                        vpn_sent_packet_rates.Add(0);
+                        vpn_received_packet_rates.Add(0);
+
+                        vpn_max_bytes_sent.Add(entries.Last().VpnRX);
+                        vpn_max_bytes_received.Add(entries.Last().VpnTX);
                     }
 
                     eth_max_bytes_sent.Add(entries.Last().Eth0TX);
@@ -188,6 +241,9 @@ namespace Analyzer
 
                     control_max_bytes_sent.Add(entries.Last().Eth0TX - entries.Last().VpnTX);
                     control_max_bytes_received.Add(entries.Last().Eth0RX - entries.Last().VpnRX);
+
+                    vpn_max_bytes_sent.Add(entries.Last().VpnTX);
+                    vpn_max_bytes_received.Add(entries.Last().VpnRX);
                 }
 
 
@@ -204,8 +260,6 @@ namespace Analyzer
                 var avg_eth_max_bytes_sent = eth_max_bytes_sent.Average();
                 var avg_eth_max_bytes_received = eth_max_bytes_received.Average();
 
-
-                
                 var avg_eth_packet_size_sent = eth_packet_sizes_sent.Count == 0 ? 0 : eth_packet_sizes_sent.Average();
                 var avg_eth_packet_size_received = eth_packet_sizes_received.Count == 0 ? 0 : eth_packet_sizes_received.Average();
 
@@ -219,12 +273,22 @@ namespace Analyzer
                 var avg_control_max_bytes_sent = control_max_bytes_sent.Average();
                 var avg_control_max_bytes_received = control_max_bytes_received.Average();
 
-
-
                 var avg_control_packet_size_sent = control_packet_sizes_sent.Count == 0 ? 0 : control_packet_sizes_sent.Average();
                 var avg_control_packet_size_received = control_packet_sizes_received.Count == 0 ? 0 : control_packet_sizes_received.Average();
 
-                Console.WriteLine($"{name};{Fmt(avg_eth_bytes_sent_rate)};{Fmt(avg_eth_bytes_received_rate)};{Fmt(avg_eth_max_bytes_sent)};{Fmt(avg_eth_max_bytes_received)};{Fmt(avg_eth_packets_sent_rate)};{Fmt(avg_eth_packets_received_rate)};{Fmt(avg_time_between_packets)};{Fmt(avg_eth_packet_size_sent)};{Fmt(avg_eth_packet_size_received)};{Fmt(avg_control_bytes_sent_rate)};{Fmt(avg_control_bytes_received_rate)};{Fmt(avg_control_max_bytes_sent)};{Fmt(avg_control_max_bytes_received)};{Fmt(avg_control_packets_sent_rate)};{Fmt(avg_control_packets_received_rate)};{Fmt(avg_control_packet_size_sent)};{Fmt(avg_control_packet_size_received)}");
+                var avg_vpn_bytes_sent_rate = vpn_sent_rates.Average();
+                var avg_vpn_bytes_received_rate = vpn_received_rates.Average();
+
+                var avg_vpn_packets_sent_rate = vpn_sent_packet_rates.Average();
+                var avg_vpn_packets_received_rate = vpn_received_packet_rates.Average();
+
+                var avg_vpn_max_bytes_sent = vpn_max_bytes_sent.Average();
+                var avg_vpn_max_bytes_received = vpn_max_bytes_received.Average();
+
+                var avg_vpn_packet_size_sent = vpn_packet_sizes_sent.Count == 0 ? 0 : vpn_packet_sizes_sent.Average();
+                var avg_vpn_packet_size_received = vpn_packet_sizes_received.Count == 0 ? 0 : vpn_packet_sizes_received.Average();
+
+                Console.WriteLine($"{name};{Fmt(avg_eth_bytes_sent_rate)};{Fmt(avg_eth_bytes_received_rate)};{Fmt(avg_eth_max_bytes_sent)};{Fmt(avg_eth_max_bytes_received)};{Fmt(avg_eth_packets_sent_rate)};{Fmt(avg_eth_packets_received_rate)};{Fmt(avg_time_between_packets)};{Fmt(avg_eth_packet_size_sent)};{Fmt(avg_eth_packet_size_received)};{Fmt(avg_control_bytes_sent_rate)};{Fmt(avg_control_bytes_received_rate)};{Fmt(avg_control_max_bytes_sent)};{Fmt(avg_control_max_bytes_received)};{Fmt(avg_control_packets_sent_rate)};{Fmt(avg_control_packets_received_rate)};{Fmt(avg_control_packet_size_sent)};{Fmt(avg_control_packet_size_received)};{Fmt(avg_vpn_bytes_sent_rate)};{Fmt(avg_vpn_bytes_received_rate)};{Fmt(avg_vpn_max_bytes_sent)};{Fmt(avg_vpn_max_bytes_received)};{Fmt(avg_vpn_packets_sent_rate)};{Fmt(avg_vpn_packets_received_rate)};{Fmt(avg_vpn_packet_size_sent)};{Fmt(avg_vpn_packet_size_received)}");
             }
 
             Console.Read();

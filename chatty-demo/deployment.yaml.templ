@@ -16,7 +16,7 @@ spec:
       - name: chattytestclient
         image: "{{image}}"
         imagePullPolicy: Always
-        args: [ "{{endpoint}}", "{{port}}" ]
+        args: [ "{{endpoint}}", "{{port}}", "{{loadsleep}}" ]
         securityContext:
           capabilities:
             add:

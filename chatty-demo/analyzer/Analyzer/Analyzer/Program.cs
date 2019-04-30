@@ -294,8 +294,8 @@ namespace Analyzer
                 var avg_vpn_packet_size_sent = vpn_packet_sizes_sent.Count == 0 ? 0 : vpn_packet_sizes_sent.Average();
                 var avg_vpn_packet_size_received = vpn_packet_sizes_received.Count == 0 ? 0 : vpn_packet_sizes_received.Average();
 
-                var control_overhead_rx = (avg_control_max_bytes_sent / avg_eth_max_bytes_sent);
-                var control_overhead_tx = (avg_control_max_bytes_received / avg_eth_max_bytes_received);
+                var control_overhead_tx = (avg_control_max_bytes_sent / avg_eth_max_bytes_sent);
+                var control_overhead_rx = (avg_control_max_bytes_received / avg_eth_max_bytes_received);
 
                 Console.WriteLine($"{name};{Fmt(avg_eth_bytes_sent_rate)};{Fmt(avg_eth_bytes_received_rate)};{Fmt(avg_eth_max_bytes_sent)};{Fmt(avg_eth_max_bytes_received)};{Fmt(avg_eth_packets_sent_rate)};{Fmt(avg_eth_packets_received_rate)};{Fmt(avg_time_between_packets)};{Fmt(avg_eth_packet_size_sent)};{Fmt(avg_eth_packet_size_received)};{Fmt(avg_control_bytes_sent_rate)};{Fmt(avg_control_bytes_received_rate)};{Fmt(avg_control_max_bytes_sent)};{Fmt(avg_control_max_bytes_received)};{Fmt(avg_control_packets_sent_rate)};{Fmt(avg_control_packets_received_rate)};{Fmt(avg_control_packet_size_sent)};{Fmt(avg_control_packet_size_received)};{Fmt(avg_vpn_bytes_sent_rate)};{Fmt(avg_vpn_bytes_received_rate)};{Fmt(avg_vpn_max_bytes_sent)};{Fmt(avg_vpn_max_bytes_received)};{Fmt(avg_vpn_packets_sent_rate)};{Fmt(avg_vpn_packets_received_rate)};{Fmt(avg_vpn_packet_size_sent)};{Fmt(avg_vpn_packet_size_received)};{Fmt(control_overhead_tx)};{Fmt(control_overhead_rx)}");
             }

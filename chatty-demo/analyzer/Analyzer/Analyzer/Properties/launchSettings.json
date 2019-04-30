@@ -2,7 +2,7 @@
   "profiles": {
     "Analyzer": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Custom\\tempstorage\\data"
+      "commandLineArgs": "C:\\Custom\\tempstorage\\data_load"
     }
   }
 }

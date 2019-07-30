@@ -49,7 +49,7 @@ namespace Analyzer
             }
 
 
-            Console.WriteLine("timestamp;user_time;kernel_time;child_user_time;child_kernel_time;vm_size;resident_size;shared_size");
+            Console.WriteLine("name;sample_size;timestamp;user_time;kernel_time;child_user_time;child_kernel_time;total_time;vm_size;resident_size;shared_size");
 
             foreach (var dir in System.IO.Directory.GetDirectories(args[0]))
             {
@@ -75,13 +75,13 @@ namespace Analyzer
 
                     foreach (var entry in entries)
                     {
-                        if (!user_times.ContainsKey(entry.Timestamp)) user_times[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!kernel_times.ContainsKey(entry.Timestamp)) kernel_times[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!child_user_times.ContainsKey(entry.Timestamp)) child_user_times[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!child_kernel_times.ContainsKey(entry.Timestamp)) child_kernel_times[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!vm_sizes.ContainsKey(entry.Timestamp)) vm_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!resident_sizes.ContainsKey(entry.Timestamp)) resident_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
-                        if (!shared_sizes.ContainsKey(entry.Timestamp)) shared_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!user_times.ContainsKey(entry.Timestamp - earliestTimestamp)) user_times[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!kernel_times.ContainsKey(entry.Timestamp - earliestTimestamp)) kernel_times[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!child_user_times.ContainsKey(entry.Timestamp - earliestTimestamp)) child_user_times[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!child_kernel_times.ContainsKey(entry.Timestamp - earliestTimestamp)) child_kernel_times[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!vm_sizes.ContainsKey(entry.Timestamp - earliestTimestamp)) vm_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!resident_sizes.ContainsKey(entry.Timestamp - earliestTimestamp)) resident_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
+                        if (!shared_sizes.ContainsKey(entry.Timestamp - earliestTimestamp)) shared_sizes[entry.Timestamp - earliestTimestamp] = new List<long>();
 
                         user_times[entry.Timestamp - earliestTimestamp].Add(entry.UserTime);
                         kernel_times[entry.Timestamp - earliestTimestamp].Add(entry.KernelTime);
@@ -112,8 +112,10 @@ namespace Analyzer
                         var avg_resident_size = resident_sizes[ts].Average();
                         var avg_shared_size = shared_sizes[ts].Average();
 
+                        var sample_size = user_times[ts].Count;
+                        var total_avg_time = avg_user_time + avg_kernel_time + avg_child_user_time + avg_child_kernel_time;
 
-                        Console.WriteLine($"{name};{ts};{avg_user_time};{avg_kernel_time};{avg_child_user_time};{avg_child_kernel_time};{avg_vm_size};{avg_resident_size};{avg_shared_size}"); 
+                        Console.WriteLine($"{name};{sample_size};{ts};{avg_user_time};{avg_kernel_time};{avg_child_user_time};{avg_child_kernel_time};{total_avg_time};{avg_vm_size};{avg_resident_size};{avg_shared_size}"); 
                     }
                 }
 

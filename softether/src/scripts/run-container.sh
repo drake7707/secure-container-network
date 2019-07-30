@@ -56,7 +56,7 @@ function setupServer {
   # Start VPN server
   vpnserver execsvc &
   server_pid=$!
-  echo ${server_pid} > /var/run/vpn.pid
+#  echo ${server_pid} > /var/run/vpn.pid
 
   errcount=0
   while ! vpncmd localhost:443 /SERVER /CMD About > /dev/null 2>&1; do
@@ -83,6 +83,8 @@ function setupServer {
   # set user password
   vpncmd localhost:443 /SERVER /Hub:${HUBNAME} /CMD UserPasswordSet server /PASSWORD:server
 
+  # save all pids to the vpn pid
+  pgrep vpnserver > /var/run/vpn.pid
 
   vpnclient execsvc &
   client_pid=$!
@@ -181,6 +183,9 @@ function setupClient {
     vpncmd localhost /CLIENT /CMD AccountConnect account0
 
     ip addr add dev ${IFACE} ${clientip}/${net_prefix}
+
+    # save all pids to the vpn pid
+    pgrep vpnclient > /var/run/vpn.pid
 
     if [[ "${FOREGROUND:-n}" == "y" ]]; then
       while true; do

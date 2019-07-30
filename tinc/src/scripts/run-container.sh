@@ -86,7 +86,6 @@ EOF
   # run daemon
   tincd -n ${net_name} -d3 &
   pid=$!
-  echo ${pid} > /var/run/vpn.pid
 
   errcount=0
   while ! ip a show dev ${net_name} > /dev/null 2>&1; do
@@ -98,6 +97,9 @@ EOF
     fi
   done
 
+  # tinc spawns a child so it has a different pid
+  pid=$(pgrep "tincd")
+  echo ${pid} > /var/run/vpn.pid
 
   # configure network interface
   ip link set dev ${net_name} up
@@ -175,7 +177,6 @@ EOF
 
     tincd -n ${net_name} -d3 &
     pid=$!
-    echo ${pid} > /var/run/vpn.pid
 
     errcount=0
     while ! ip a show dev ${net_name} > /dev/null 2>&1; do
@@ -186,6 +187,10 @@ EOF
         exit 1
       fi
     done
+
+    # tinc spawns a child so it has a different pid
+    pid=$(pgrep "tincd")
+    echo ${pid} > /var/run/vpn.pid
 
     ip=$(grep Subnet /etc/tinc/${net_name}/hosts/${hostname} | cut -d ' ' -f 3 | cut -d '/' -f 1)
     IFS=$'/' read -d '' -r -a subnetparts <<< "${subnet}" || true

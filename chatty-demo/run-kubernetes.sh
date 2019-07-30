@@ -14,31 +14,35 @@ clientpath="/proj/wall2-ilabt-iminds-be/dkkerkho/secure-container-network/chatty
 
 modprobe sch_netem
 
+ip_endpoint=10.2.0.40
+
+vpn_image="drake7707/${vpn}-server-chatty-test"
+
 if [[ ${vpn} == "wireguard" ]]; then
-  vpn_image="drake7707/wireguard-go"
+#  vpn_image="drake7707/wireguard-go"
   port="51820"
   image="drake7707/wireguard-client-chatty-test"
-  endpoint=10.2.0.23:${port}
+  endpoint=${ip_endpoint}:${port}
 elif [[ ${vpn} == "openvpn" ]]; then
-  vpn_image="drake7707/openvpn"
+#  vpn_image="drake7707/openvpn"
   port="1194"
   image="drake7707/openvpn-client-chatty-test"
-  endpoint=10.2.0.23:${port}
+  endpoint=${ip_endpoint}:${port}
 elif [[ ${vpn} == "zerotier" ]]; then
-  vpn_image="drake7707/zerotier"
+#  vpn_image="drake7707/zerotier"
   port="9993"
   image="drake7707/zerotier-client-chatty-test"
-  endpoint=10.2.0.23:${port}
+  endpoint=${ip_endpoint}:${port}
 elif [[ ${vpn} == "tinc" ]]; then
-  vpn_image="drake7707/tinc"
+#  vpn_image="drake7707/tinc"
   port="655"
   image="drake7707/tinc-client-chatty-test"
-  endpoint=10.2.0.23:6555
+  endpoint=${ip_endpoint}:6555
 elif [[ ${vpn} == "softether" ]]; then
-  vpn_image="drake7707/softether"
+#  vpn_image="drake7707/softether"
   port="443"
   image="drake7707/softether-client-chatty-test"
-  endpoint=10.2.0.23:4443
+  endpoint=${ip_endpoint}:4443
 else
   echo "Invalid VPN specified" 1>&2
   exit 1
@@ -76,7 +80,7 @@ if [[ ${action} == "run" ]]; then
   -p ${port}:${port}/tcp -p ${port}:${port}/udp ${additionalPorts} \
   --cap-add=NET_ADMIN --device /dev/net/tun \
   -v $(pwd)/data/${runname}/server:/data \
-  ${vpn_image} --server --subnet 6.0.0.0/16 --foreground
+  ${vpn_image} --server --subnet 6.0.0.0/16
 
   # set up demo server
   docker run \

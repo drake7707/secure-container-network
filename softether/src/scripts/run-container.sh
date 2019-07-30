@@ -56,6 +56,7 @@ function setupServer {
   # Start VPN server
   vpnserver execsvc &
   server_pid=$!
+  echo ${server_pid} > /var/run/vpn.pid
 
   errcount=0
   while ! vpncmd localhost:443 /SERVER /CMD About > /dev/null 2>&1; do
@@ -135,6 +136,7 @@ function setupClient {
 
   vpnclient execsvc &
   client_pid=$!
+  echo ${client_pid} > /var/run/vpn.pid
 
   errcount=0
   while ! vpncmd localhost /CLIENT /CMD About > /dev/null 2>&1; do

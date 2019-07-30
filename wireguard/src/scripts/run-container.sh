@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 source /scripts/helper.sh
 
@@ -73,6 +73,7 @@ function setupServer {
   # Configure tun device
   /usr/local/bin/wireguard-go -f ${IFACE} &
   wg_pid=$!
+  echo ${wg_pid} > /var/run/vpn.pid
 
   errcount=0
   while ! wg show ${IFACE} > /dev/null 2>&1; do
@@ -135,6 +136,7 @@ function setupClient {
   # Configure tun device
   /usr/local/bin/wireguard-go -f ${IFACE} &
   wg_pid=$!
+  echo ${wg_pid} > /var/run/vpn.pid
 
   errcount=0
   while ! wg show ${IFACE} > /dev/null 2>&1; do

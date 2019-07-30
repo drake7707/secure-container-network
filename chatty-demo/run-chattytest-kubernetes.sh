@@ -9,7 +9,7 @@ if [[ -z "${loadsleep:-}" ]]; then
 	exit 1
 fi
 
-vpns=( "openvpn" "wireguard" "zerotier" "tinc" "softether" )
+vpns=( "zerotier" "openvpn" "wireguard" "tinc" "softether" )
 
 for vpn in ${vpns[@]}; do
 

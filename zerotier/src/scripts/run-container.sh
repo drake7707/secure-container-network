@@ -61,8 +61,9 @@ function setupServer {
   server_ip=$(helper::add_to_ip ${base_net} 1)
 
 
-  zerotier-one -d
+  zerotier-one &
   pid=$!
+  echo ${pid} > /var/run/vpn.pid
 
   # wait until the token is created by the daemon
   while [[ ! -f /var/lib/zerotier-one/authtoken.secret ]]; do
@@ -115,8 +116,9 @@ function setupClient {
     exit 1
   fi
 
-  zerotier-one -d
+  zerotier-one &
   pid=$!
+  echo ${pid} > /var/run/vpn.pid
 
   # wait until the token is created by the daemon
   while [[ ! -f /var/lib/zerotier-one/authtoken.secret ]]; do

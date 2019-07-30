@@ -77,16 +77,24 @@ function setupServer {
 
   mkdir -p /data/ccd
 
-  extraArgs=""
-  if [[ "${FOREGROUND:-n}" != "y" ]]; then
+#  extraArgs=""
+#  if [[ "${FOREGROUND:-n}" != "y" ]]; then
     extraArgs="--daemon"
-  fi
+#  fi
 
   # run the endpoint
   rest-endpoint --script "/scripts/rest-endpoint-handler.sh" &
   rest_pid=$!
 
   openvpn --config /data/server.conf --client-config-dir /data/ccd ${extraArgs}
+  openvpn_pid=$!
+  echo ${openvpn_pid} > /var/run/vpn.pid
+
+  if [[ "${FOREGROUND:-n}" == "y" ]]; then
+    while true; do
+      sleep 1
+    done
+  fi
 }
 
 
@@ -117,13 +125,14 @@ function setupClient {
     rm /data/client.conf && mv /data/client.conf.tmp /data/client.conf
 
 
-    extraArgs=""
-    if [[ "${FOREGROUND:-n}" != "y" ]]; then
+#    extraArgs=""
+#    if [[ "${FOREGROUND:-n}" != "y" ]]; then
       extraArgs="--daemon"
-    fi
+#    fi
 
-    openvpn --config "/data/client.conf" ${extraArgs}
-    openvpnpid=$!
+    openvpn --config "/data/client.conf" &
+    openvpn_pid=$!
+    echo ${openvpn_pid} > /var/run/vpn.pid
 
     errcount=0
     while ! ip a show dev tun0 > /dev/null 2>&1; do

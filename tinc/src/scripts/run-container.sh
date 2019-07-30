@@ -86,6 +86,7 @@ EOF
   # run daemon
   tincd -n ${net_name} -d3 &
   pid=$!
+  echo ${pid} > /var/run/vpn.pid
 
   errcount=0
   while ! ip a show dev ${net_name} > /dev/null 2>&1; do
@@ -174,6 +175,7 @@ EOF
 
     tincd -n ${net_name} -d3 &
     pid=$!
+    echo ${pid} > /var/run/vpn.pid
 
     errcount=0
     while ! ip a show dev ${net_name} > /dev/null 2>&1; do

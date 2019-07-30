@@ -42,6 +42,13 @@ old_vpn_tx=-1
 old_eth_rx=-1
 old_eth_tx=-1
 
+
+function checkProcessStats {
+   local PID=$(cat /var/run/vpn.pid)
+   local timestamp=$(date +%s%N)
+   echo "${timestamp} $(cat /proc/$PID/stat | cut -d ' ' -f 14,15,16,17) $(cat /proc/$PID/statm | cut -d ' ' -f 1,2,3)"
+}
+
 function checkBytes {
   eth_rx="$(cat /sys/class/net/${eth_iface}/statistics/rx_bytes)"
   eth_tx="$(cat /sys/class/net/${eth_iface}/statistics/tx_bytes)"
@@ -90,5 +97,6 @@ function checkBytes {
 
 while true; do
   checkBytes >> /results/$(hostname).csv
+  checkProcessStats >> /results/$(hostname)_proc.txt
   sleep 1
 done
